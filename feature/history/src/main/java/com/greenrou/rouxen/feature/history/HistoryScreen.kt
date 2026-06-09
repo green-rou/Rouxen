@@ -1,6 +1,7 @@
 package com.greenrou.rouxen.feature.history
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,6 +40,7 @@ private val dateFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefaul
 @Composable
 fun HistoryScreen(
     onOpenScan: (Long) -> Unit,
+    onReanalyze: (String) -> Unit = {},
     viewModel: HistoryViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -73,6 +75,7 @@ fun HistoryScreen(
                         scan = scan,
                         onDelete = { viewModel.delete(scan.id) },
                         onOpen = { onOpenScan(scan.id) },
+                        onReanalyze = { onReanalyze(scan.url) },
                     )
                 }
             }
@@ -85,6 +88,7 @@ private fun SwipeableScanItem(
     scan: ScanResultEntity,
     onDelete: () -> Unit,
     onOpen: () -> Unit,
+    onReanalyze: () -> Unit,
 ) {
     val dismissState = rememberSwipeToDismissBoxState()
     if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) {
@@ -106,11 +110,11 @@ private fun SwipeableScanItem(
         },
         enableDismissFromStartToEnd = false,
     ) {
-        RouxenCard {
+        RouxenCard(modifier = Modifier.clickable(onClick = onReanalyze)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -126,6 +130,12 @@ private fun SwipeableScanItem(
                         color = RouxenColors.TextSecondary,
                     )
                 }
+                Text(
+                    text = "→",
+                    style = RouxenTypography.bodySmall,
+                    color = RouxenColors.Accent,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
             }
         }
     }

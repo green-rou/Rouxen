@@ -9,6 +9,9 @@ import com.greenrou.rouxen.feature.ssl.HeadersViewModel
 import com.greenrou.rouxen.feature.ssl.SslViewModel
 import com.greenrou.rouxen.feature.traceroute.TracerouteViewModel
 import com.greenrou.rouxen.feature.whois.WhoisViewModel
+import com.greenrou.rouxen.feature.wifi.BleGattViewModel
+import com.greenrou.rouxen.feature.wifi.WifiScannerViewModel
+import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -22,4 +25,6 @@ val viewModelModule = module {
     viewModel { WhoisViewModel(get(), get()) }
     viewModel { TracerouteViewModel(get()) }
     viewModel { HistoryViewModel(get(), get()) }
+    viewModel { WifiScannerViewModel(get(), get()) }
+    viewModel { BleGattViewModel(androidContext()) }
 }

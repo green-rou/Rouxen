@@ -34,15 +34,24 @@ import com.greenrou.rouxen.core.ui.theme.RouxenTypography
 import com.greenrou.rouxen.feature.dns.DnsScreen
 import com.greenrou.rouxen.feature.history.HistoryScreen
 import com.greenrou.rouxen.feature.home.HomeScreen
+import com.greenrou.rouxen.feature.home.SiteAnalyzerEntryScreen
 import com.greenrou.rouxen.feature.ping.PingScreen
 import com.greenrou.rouxen.feature.scan.ScanScreen
 import com.greenrou.rouxen.feature.scan.ScanTab
+import com.greenrou.rouxen.feature.settings.SettingsScreen
 import com.greenrou.rouxen.feature.ssl.HeadersScreen
 import com.greenrou.rouxen.feature.ssl.SslScreen
 import com.greenrou.rouxen.feature.traceroute.TracerouteScreen
 import com.greenrou.rouxen.feature.whois.WhoisScreen
+import com.greenrou.rouxen.feature.wifi.BleDeviceDetailScreen
+import com.greenrou.rouxen.feature.wifi.WifiNetworkDetailScreen
+import com.greenrou.rouxen.feature.wifi.WifiScannerScreen
 
-private val topLevelRoutes = setOf(AppRoute.Home.route, AppRoute.History.route)
+private val topLevelRoutes = setOf(
+    AppRoute.Home.route,
+    AppRoute.History.route,
+    AppRoute.Settings.route,
+)
 
 @Composable
 fun AppNavigation() {
@@ -68,16 +77,66 @@ fun AppNavigation() {
         ) {
             composable(AppRoute.Home.route) {
                 HomeScreen(
+                    onSiteAnalyzer = { navController.navigate(AppRoute.SiteAnalyzerEntry.route) },
+                    onWifiScanner = { navController.navigate(AppRoute.WifiScanner.route) },
+                )
+            }
+
+            composable(AppRoute.Settings.route) {
+                SettingsScreen()
+            }
+
+            composable(AppRoute.SiteAnalyzerEntry.route) {
+                SiteAnalyzerEntryScreen(
                     onAnalyze = { url ->
                         navController.navigate(AppRoute.Scan.createRoute(url))
                     },
                 )
             }
 
+            composable(AppRoute.WifiScanner.route) {
+                WifiScannerScreen(
+                    onBack = { navController.popBackStack() },
+                    onNetworkClick = { bssid ->
+                        navController.navigate(AppRoute.WifiNetworkDetail.createRoute(bssid))
+                    },
+                    onDeviceClick = { address ->
+                        navController.navigate(AppRoute.BleDeviceDetail.createRoute(address))
+                    },
+                )
+            }
+
+            composable(
+                route = AppRoute.WifiNetworkDetail.route,
+                arguments = listOf(
+                    navArgument(AppRoute.WifiNetworkDetail.ARG_BSSID) { type = NavType.StringType }
+                ),
+            ) { backStackEntry ->
+                val bssid = Uri.decode(
+                    backStackEntry.arguments?.getString(AppRoute.WifiNetworkDetail.ARG_BSSID) ?: ""
+                )
+                WifiNetworkDetailScreen(bssid = bssid, onBack = { navController.popBackStack() })
+            }
+
+            composable(
+                route = AppRoute.BleDeviceDetail.route,
+                arguments = listOf(
+                    navArgument(AppRoute.BleDeviceDetail.ARG_ADDRESS) { type = NavType.StringType }
+                ),
+            ) { backStackEntry ->
+                val address = Uri.decode(
+                    backStackEntry.arguments?.getString(AppRoute.BleDeviceDetail.ARG_ADDRESS) ?: ""
+                )
+                BleDeviceDetailScreen(address = address, onBack = { navController.popBackStack() })
+            }
+
             composable(AppRoute.History.route) {
                 HistoryScreen(
                     onOpenScan = { id ->
                         navController.navigate(AppRoute.ScanDetail.createRoute(id))
+                    },
+                    onReanalyze = { url ->
+                        navController.navigate(AppRoute.Scan.createRoute(url))
                     },
                 )
             }
