@@ -1,6 +1,7 @@
 package com.greenrou.rouxen.di
 
 import androidx.room.Room
+import com.greenrou.rouxen.feature.device.DeviceStatsRepository
 import com.greenrou.rouxen.feature.dns.data.DnsRepositoryImpl
 import com.greenrou.rouxen.feature.dns.domain.DnsRepository
 import com.greenrou.rouxen.feature.history.db.AppDatabase
@@ -18,4 +19,5 @@ val repositoryModule = module {
             .build()
     }
     single { get<AppDatabase>().scanDao() }
+    single { DeviceStatsRepository(androidContext()) }
 }

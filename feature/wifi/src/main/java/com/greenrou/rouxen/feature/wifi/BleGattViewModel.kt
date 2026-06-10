@@ -134,7 +134,7 @@ class BleGattViewModel(private val context: Context) : ViewModel() {
     }
 }
 
-private fun gattServiceName(uuid: String): String = when (uuid.take(8).lowercase()) {
+internal fun gattServiceName(uuid: String): String = when (uuid.take(8).lowercase()) {
     "00001800" -> "Generic Access"
     "00001801" -> "Generic Attribute"
     "0000180a" -> "Device Information"

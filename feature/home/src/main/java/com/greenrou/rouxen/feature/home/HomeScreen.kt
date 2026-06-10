@@ -41,13 +41,14 @@ private data class Tool(
 private val tools = listOf(
     Tool(R.drawable.ic_tool_analyzer, "Site Analyzer", "DNS · SSL · Headers"),
     Tool(R.drawable.ic_tool_wifi, "WiFi & BLE", "Networks & devices"),
-    Tool(R.drawable.ic_tool_monitor, "Device Monitor", "CPU · RAM · Battery", available = false),
+    Tool(R.drawable.ic_tool_monitor, "Device Monitor", "CPU · RAM · Battery"),
 )
 
 @Composable
 fun HomeScreen(
     onSiteAnalyzer: () -> Unit,
     onWifiScanner: () -> Unit,
+    onDeviceMonitor: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -61,12 +62,6 @@ fun HomeScreen(
             text = "Rouxen",
             style = RouxenTypography.titleMedium,
             color = RouxenColors.Accent,
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "Network analyzer",
-            style = RouxenTypography.bodySmall,
-            color = RouxenColors.TextSecondary,
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -83,6 +78,7 @@ fun HomeScreen(
                     onClick = when (tool.title) {
                         "Site Analyzer" -> onSiteAnalyzer
                         "WiFi & BLE" -> onWifiScanner
+                        "Device Monitor" -> onDeviceMonitor
                         else -> null
                     },
                 )

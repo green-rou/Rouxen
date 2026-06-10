@@ -34,7 +34,10 @@ class WhoisClient {
             socket.connect(java.net.InetSocketAddress(server, WHOIS_PORT), TIMEOUT_MS)
             val writer = PrintWriter(socket.getOutputStream(), true)
             val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
-            writer.println(domain)
+            // RFC 3912 requires CRLF; PrintWriter.println() on Android emits LF-only,
+            // which strict registries (e.g. Verisign) silently ignore until soTimeout.
+            writer.print("$domain\r\n")
+            writer.flush()
             return reader.readText()
         }
     }

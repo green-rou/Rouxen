@@ -20,17 +20,24 @@ class TracerouteClient {
                 .redirectErrorStream(true)
                 .start()
 
+            var hopsEmitted = 0
             try {
                 val reader = BufferedReader(InputStreamReader(process.inputStream))
                 var line: String?
                 while (reader.readLine().also { line = it } != null) {
                     val hop = parseLine(line!!)
-                    if (hop != null) emit(TracerouteResult.Hop(hop))
+                    if (hop != null) {
+                        hopsEmitted++
+                        emit(TracerouteResult.Hop(hop))
+                    }
                 }
             } finally {
                 process.destroyForcibly()
             }
-            emit(TracerouteResult.Complete)
+            // The traceroute binary exists on most ROMs but needs CAP_NET_RAW for raw
+            // ICMP/UDP probes, which app processes don't have — it exits with an
+            // unparseable permission error and zero hop lines on non-rooted devices.
+            emit(if (hopsEmitted > 0) TracerouteResult.Complete else TracerouteResult.Unsupported)
         } catch (_: Exception) {
             emit(TracerouteResult.Unsupported)
         }

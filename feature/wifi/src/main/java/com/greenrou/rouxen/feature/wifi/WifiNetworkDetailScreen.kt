@@ -100,6 +100,8 @@ private fun apVendor(bssid: String): String {
 @Composable
 fun WifiNetworkDetailScreen(bssid: String, onBack: () -> Unit) {
     val network = WifiScanCache.wifiNetworks.firstOrNull { it.bssid == bssid }
+    val connection = WifiScanCache.connectionInfo
+        ?.takeIf { it.bssid.equals(bssid, ignoreCase = true) }
 
     Column(
         modifier = Modifier
@@ -127,12 +129,34 @@ fun WifiNetworkDetailScreen(bssid: String, onBack: () -> Unit) {
 
                 item {
                     RouxenCard {
-                        DetailSectionLabel("Identity")
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            DetailSectionLabel("Identity")
+                            if (connection != null) {
+                                StatusBadge(label = "Connected", status = BadgeStatus.Success)
+                            }
+                        }
                         DetailRow("SSID", if (network.isHidden) "<hidden>" else network.ssid)
                         DetailRow("BSSID", network.bssid)
                         if (network.isHidden) {
                             Spacer(modifier = Modifier.height(6.dp))
                             StatusBadge(label = "Hidden network", status = BadgeStatus.Warning)
+                        }
+                    }
+                }
+
+                if (connection != null) {
+                    item {
+                        RouxenCard {
+                            DetailSectionLabel("Connection")
+                            DetailRow("IP Address", connection.ipAddress)
+                            DetailRow("Link Speed", "${connection.linkSpeedMbps} Mbps")
+                            connection.rxLinkSpeedMbps?.let {
+                                DetailRow("RX Link Speed", "$it Mbps")
+                            }
                         }
                     }
                 }

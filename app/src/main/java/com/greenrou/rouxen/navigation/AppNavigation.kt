@@ -31,10 +31,12 @@ import java.util.Date
 import java.util.Locale
 import com.greenrou.rouxen.core.ui.theme.RouxenColors
 import com.greenrou.rouxen.core.ui.theme.RouxenTypography
+import com.greenrou.rouxen.feature.device.DeviceMonitorScreen
 import com.greenrou.rouxen.feature.dns.DnsScreen
 import com.greenrou.rouxen.feature.history.HistoryScreen
 import com.greenrou.rouxen.feature.home.HomeScreen
 import com.greenrou.rouxen.feature.home.SiteAnalyzerEntryScreen
+import com.greenrou.rouxen.feature.map.MapScreen
 import com.greenrou.rouxen.feature.ping.PingScreen
 import com.greenrou.rouxen.feature.scan.ScanScreen
 import com.greenrou.rouxen.feature.scan.ScanTab
@@ -46,6 +48,7 @@ import com.greenrou.rouxen.feature.whois.WhoisScreen
 import com.greenrou.rouxen.feature.wifi.BleDeviceDetailScreen
 import com.greenrou.rouxen.feature.wifi.WifiNetworkDetailScreen
 import com.greenrou.rouxen.feature.wifi.WifiScannerScreen
+import com.greenrou.rouxen.navigation.scan.AllScreen
 
 private val topLevelRoutes = setOf(
     AppRoute.Home.route,
@@ -79,7 +82,12 @@ fun AppNavigation() {
                 HomeScreen(
                     onSiteAnalyzer = { navController.navigate(AppRoute.SiteAnalyzerEntry.route) },
                     onWifiScanner = { navController.navigate(AppRoute.WifiScanner.route) },
+                    onDeviceMonitor = { navController.navigate(AppRoute.DeviceMonitor.route) },
                 )
+            }
+
+            composable(AppRoute.DeviceMonitor.route) {
+                DeviceMonitorScreen(onBack = { navController.popBackStack() })
             }
 
             composable(AppRoute.Settings.route) {
@@ -88,6 +96,7 @@ fun AppNavigation() {
 
             composable(AppRoute.SiteAnalyzerEntry.route) {
                 SiteAnalyzerEntryScreen(
+                    onBack = { navController.popBackStack() },
                     onAnalyze = { url ->
                         navController.navigate(AppRoute.Scan.createRoute(url))
                     },
@@ -201,12 +210,14 @@ fun AppNavigation() {
 
 @Composable
 private fun scanTabs(url: String): Map<ScanTab, @Composable () -> Unit> = mapOf(
+    ScanTab.ALL to { AllScreen(url = url) },
     ScanTab.DNS to { DnsScreen(url = url) },
     ScanTab.SSL to { SslScreen(url = url) },
     ScanTab.HEADERS to { HeadersScreen(url = url) },
     ScanTab.PING to { PingScreen(url = url) },
     ScanTab.WHOIS to { WhoisScreen(url = url) },
     ScanTab.TRACEROUTE to { TracerouteScreen(url = url) },
+    ScanTab.MAP to { MapScreen(url = url) },
 )
 
 @Composable

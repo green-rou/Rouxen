@@ -125,6 +125,29 @@ fun BleDeviceDetailScreen(
 
             item {
                 RouxenCard {
+                    DetailSectionLabel("Advertisement")
+                    DetailRow(
+                        "TX Power",
+                        device.txPowerLevel?.let { "$it dBm" } ?: "Not advertised",
+                    )
+                    DetailRow("Connectable", if (device.isConnectable) "Yes" else "No")
+                    if (device.serviceUuids.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Advertised services",
+                            style = RouxenTypography.labelSmall,
+                            color = RouxenColors.TextSecondary,
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        device.serviceUuids.forEach { uuid ->
+                            DetailRow(gattServiceName(uuid), uuid.take(8).uppercase())
+                        }
+                    }
+                }
+            }
+
+            item {
+                RouxenCard {
                     DetailSectionLabel("Signal")
                     DetailRow("RSSI", "${device.rssi} dBm")
                     DetailRow("Quality", "$signalQuality%")

@@ -8,6 +8,7 @@ sealed class AppRoute(val route: String) {
     object Settings : AppRoute("settings")
     object SiteAnalyzerEntry : AppRoute("site_analyzer")
     object WifiScanner : AppRoute("wifi_scanner")
+    object DeviceMonitor : AppRoute("device_monitor")
 
     object WifiNetworkDetail : AppRoute("wifi_detail/{bssid}") {
         const val ARG_BSSID = "bssid"

@@ -49,6 +49,7 @@ dependencies {
     implementation(project(":feature:whois"))
     implementation(project(":feature:history"))
     implementation(project(":feature:wifi"))
+    implementation(project(":feature:device"))
     implementation(project(":feature:settings"))
 
     implementation(platform(libs.androidx.compose.bom))

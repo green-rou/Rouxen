@@ -32,6 +32,7 @@ class WifiScannerViewModel(
                 .catch { e -> _wifiState.value = WifiScanState.Error(e.message ?: "Scan failed") }
                 .collect { networks ->
                 WifiScanCache.wifiNetworks = networks
+                WifiScanCache.connectionInfo = wifiScanner.currentConnection()
                 _wifiState.value = WifiScanState.Success(networks)
             }
         }

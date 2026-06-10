@@ -2,6 +2,7 @@ package com.greenrou.rouxen.feature.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,9 +14,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -30,6 +33,7 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun SiteAnalyzerEntryScreen(
+    onBack: () -> Unit,
     onAnalyze: (String) -> Unit,
     viewModel: HomeViewModel = koinViewModel(),
 ) {
@@ -39,58 +43,80 @@ fun SiteAnalyzerEntryScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(RouxenColors.Background)
-            .padding(16.dp),
+            .background(RouxenColors.Background),
     ) {
-        Spacer(modifier = Modifier.height(48.dp))
+        SiteAnalyzerHeader(onBack = onBack)
 
-        Text(
-            text = "Site Analyzer",
-            style = RouxenTypography.titleMedium,
-            color = RouxenColors.Accent,
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "DNS · SSL · Headers · Ping · Whois · Traceroute",
-            style = RouxenTypography.bodySmall,
-            color = RouxenColors.TextSecondary,
-        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+        ) {
+            Spacer(modifier = Modifier.height(24.dp))
 
-        Spacer(modifier = Modifier.height(32.dp))
-
-        RouxenCard {
-            RouxenTextField(
-                value = input,
-                onValueChange = viewModel::onInputChange,
-                placeholder = "https://example.com",
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Uri,
-                    imeAction = ImeAction.Go,
-                ),
-                keyboardActions = KeyboardActions(
-                    onGo = { viewModel.buildAnalyzeUrl()?.let(onAnalyze) },
-                ),
+            Text(
+                text = "DNS · SSL · Headers · Ping · Whois · Traceroute",
+                style = RouxenTypography.bodySmall,
+                color = RouxenColors.TextSecondary,
             )
 
-            if (error != null) {
+            Spacer(modifier = Modifier.height(32.dp))
+
+            RouxenCard {
+                RouxenTextField(
+                    value = input,
+                    onValueChange = viewModel::onInputChange,
+                    placeholder = "https://example.com",
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Uri,
+                        imeAction = ImeAction.Go,
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onGo = { viewModel.buildAnalyzeUrl()?.let(onAnalyze) },
+                    ),
+                )
+
+                if (error != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    StatusBadge(label = error!!, status = BadgeStatus.Error)
+                }
+
                 Spacer(modifier = Modifier.height(12.dp))
-                StatusBadge(label = error!!, status = BadgeStatus.Error)
-            }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Button(
-                onClick = { viewModel.buildAnalyzeUrl()?.let(onAnalyze) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = RouxenColors.Accent,
-                    contentColor = RouxenColors.Background,
-                ),
-                shape = RoundedCornerShape(4.dp),
-            ) {
-                Text(text = "Analyze", style = RouxenTypography.labelMedium)
+                Button(
+                    onClick = { viewModel.buildAnalyzeUrl()?.let(onAnalyze) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = RouxenColors.Accent,
+                        contentColor = RouxenColors.Background,
+                    ),
+                    shape = RoundedCornerShape(4.dp),
+                ) {
+                    Text(text = "Analyze", style = RouxenTypography.labelMedium)
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun SiteAnalyzerHeader(onBack: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(RouxenColors.Surface)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TextButton(onClick = onBack) {
+            Text("← Home", style = RouxenTypography.labelMedium, color = RouxenColors.Accent)
+        }
+        Text(
+            text = "Site Analyzer",
+            style = RouxenTypography.bodySmall,
+            color = RouxenColors.TextPrimary,
+            modifier = Modifier.padding(start = 4.dp),
+        )
     }
 }

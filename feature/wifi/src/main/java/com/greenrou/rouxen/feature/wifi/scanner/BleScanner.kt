@@ -32,14 +32,20 @@ class BleScanner(private val context: Context) {
 
         val callback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
-                val mfId = result.scanRecord?.manufacturerSpecificData
+                val record = result.scanRecord
+                val mfId = record?.manufacturerSpecificData
                     ?.takeIf { it.size() > 0 }
                     ?.keyAt(0)
+                val txPower = record?.txPowerLevel
+                    ?.takeIf { it != Int.MIN_VALUE }
                 devices[result.device.address] = BleDevice(
                     name = result.device.name ?: "Unknown Device",
                     address = result.device.address,
                     rssi = result.rssi,
                     manufacturerId = mfId,
+                    txPowerLevel = txPower,
+                    isConnectable = result.isConnectable,
+                    serviceUuids = record?.serviceUuids?.map { it.uuid.toString() } ?: emptyList(),
                 )
                 trySend(devices.values.sortedByDescending { it.rssi })
             }

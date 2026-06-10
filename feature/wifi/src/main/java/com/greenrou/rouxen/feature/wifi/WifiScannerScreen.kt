@@ -1,8 +1,17 @@
 package com.greenrou.rouxen.feature.wifi
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.location.LocationManager
+import android.net.wifi.WifiManager
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -11,6 +20,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,6 +50,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.greenrou.rouxen.core.ui.components.BadgeStatus
@@ -86,22 +97,71 @@ fun WifiScannerScreen(
         onDispose { viewModel.stopBleScan() }
     }
 
+    val wifiState by viewModel.wifiState.collectAsState()
+    val bleState by viewModel.bleState.collectAsState()
+    val radio = rememberRadioState(context)
+    var selectedTab by remember { mutableIntStateOf(0) }
+
+    val isWifiScanning = wifiState is WifiScanState.Scanning
+    val isBleScanning = bleState is BleScanState.Scanning
+    val showScanAction = granted && if (selectedTab == 0) {
+        radio.wifiOn && radio.locationOn
+    } else {
+        radio.btOn && radio.locationOn
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(RouxenColors.Background),
     ) {
-        ScannerHeader(onBack = onBack)
+        ScannerHeader(
+            onBack = onBack,
+            actions = {
+                if (showScanAction) {
+                    if (selectedTab == 0) {
+                        HeaderScanButton(
+                            label = "Scan",
+                            enabled = !isWifiScanning,
+                            showSpinner = isWifiScanning,
+                            active = false,
+                            onClick = viewModel::startWifiScan,
+                        )
+                    } else {
+                        HeaderScanButton(
+                            label = if (isBleScanning) "Stop" else "Scan",
+                            enabled = true,
+                            showSpinner = false,
+                            active = isBleScanning,
+                            onClick = {
+                                if (isBleScanning) viewModel.stopBleScan() else viewModel.startBleScan()
+                            },
+                        )
+                    }
+                }
+            },
+        )
         if (!granted) {
             PermissionContent(onRequest = { launcher.launch(WIFI_PERMISSIONS) })
         } else {
-            ScannerContent(viewModel, onNetworkClick, onDeviceClick)
+            ScannerContent(
+                onNetworkClick = onNetworkClick,
+                onDeviceClick = onDeviceClick,
+                wifiState = wifiState,
+                bleState = bleState,
+                radio = radio,
+                selectedTab = selectedTab,
+                onTabSelected = { selectedTab = it },
+            )
         }
     }
 }
 
 @Composable
-private fun ScannerHeader(onBack: () -> Unit) {
+private fun ScannerHeader(
+    onBack: () -> Unit,
+    actions: @Composable RowScope.() -> Unit = {},
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -116,8 +176,11 @@ private fun ScannerHeader(onBack: () -> Unit) {
             text = "WiFi & BLE Scanner",
             style = RouxenTypography.bodySmall,
             color = RouxenColors.TextPrimary,
-            modifier = Modifier.padding(start = 4.dp),
+            modifier = Modifier
+                .padding(start = 4.dp)
+                .weight(1f),
         )
+        actions()
     }
 }
 
@@ -157,16 +220,94 @@ private fun PermissionContent(onRequest: () -> Unit) {
     }
 }
 
+private data class RadioState(
+    val wifiOn: Boolean,
+    val btOn: Boolean,
+    val locationOn: Boolean,
+)
+
+@Composable
+private fun rememberRadioState(context: Context): RadioState {
+    var wifiOn by remember { mutableStateOf(isWifiEnabled(context)) }
+    var btOn by remember { mutableStateOf(isBluetoothEnabled(context)) }
+    var locationOn by remember { mutableStateOf(isLocationEnabled(context)) }
+
+    DisposableEffect(Unit) {
+        val filter = IntentFilter().apply {
+            addAction(WifiManager.WIFI_STATE_CHANGED_ACTION)
+            addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
+            addAction(LocationManager.PROVIDERS_CHANGED_ACTION)
+        }
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(c: Context, intent: Intent) {
+                wifiOn = isWifiEnabled(context)
+                btOn = isBluetoothEnabled(context)
+                locationOn = isLocationEnabled(context)
+            }
+        }
+        context.registerReceiver(receiver, filter)
+        onDispose { context.unregisterReceiver(receiver) }
+    }
+
+    return RadioState(wifiOn = wifiOn, btOn = btOn, locationOn = locationOn)
+}
+
+@Composable
+private fun RadioDisabledHint(
+    title: String,
+    description: String? = null,
+    buttonLabel: String,
+    onEnable: () -> Unit,
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(32.dp),
+        ) {
+            Text(
+                text = title,
+                style = RouxenTypography.titleSmall,
+                color = RouxenColors.TextPrimary,
+            )
+            if (description != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = description,
+                    style = RouxenTypography.bodySmall,
+                    color = RouxenColors.TextSecondary,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(
+                onClick = onEnable,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = RouxenColors.Accent,
+                    contentColor = RouxenColors.Background,
+                ),
+                shape = RoundedCornerShape(4.dp),
+            ) {
+                Text(buttonLabel, style = RouxenTypography.labelMedium)
+            }
+        }
+    }
+}
+
+@SuppressLint("MissingPermission")
 @Composable
 private fun ScannerContent(
-    viewModel: WifiScannerViewModel,
     onNetworkClick: (String) -> Unit,
     onDeviceClick: (String) -> Unit,
+    wifiState: WifiScanState,
+    bleState: BleScanState,
+    radio: RadioState,
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit,
 ) {
-    val wifiState by viewModel.wifiState.collectAsState()
-    val bleState by viewModel.bleState.collectAsState()
-
-    var selectedTab by remember { mutableIntStateOf(0) }
+    val context = LocalContext.current
     val tabs = listOf("WiFi", "BLE")
 
     ScrollableTabRow(
@@ -180,7 +321,7 @@ private fun ScannerContent(
         tabs.forEachIndexed { index, label ->
             Tab(
                 selected = selectedTab == index,
-                onClick = { selectedTab = index },
+                onClick = { onTabSelected(index) },
                 text = {
                     Text(
                         text = label,
@@ -194,29 +335,66 @@ private fun ScannerContent(
     }
 
     when (selectedTab) {
-        0 -> WifiTab(state = wifiState, onScan = viewModel::startWifiScan, onNetworkClick = onNetworkClick)
+        0 -> WifiTab(
+            state = wifiState,
+            onNetworkClick = onNetworkClick,
+            wifiOn = radio.wifiOn,
+            locationOn = radio.locationOn,
+            onEnableWifi = {
+                val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    Intent(Settings.Panel.ACTION_WIFI)
+                } else {
+                    Intent(Settings.ACTION_WIFI_SETTINGS)
+                }
+                context.startActivity(intent)
+            },
+            onEnableLocation = {
+                context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+            },
+        )
         1 -> BleTab(
             state = bleState,
-            onStart = viewModel::startBleScan,
-            onStop = viewModel::stopBleScan,
             onDeviceClick = onDeviceClick,
+            btOn = radio.btOn,
+            locationOn = radio.locationOn,
+            onEnableBluetooth = {
+                context.startActivity(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
+            },
+            onEnableLocation = {
+                context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+            },
         )
     }
 }
 
 @Composable
-private fun WifiTab(state: WifiScanState, onScan: () -> Unit, onNetworkClick: (String) -> Unit) {
+private fun WifiTab(
+    state: WifiScanState,
+    onNetworkClick: (String) -> Unit,
+    wifiOn: Boolean,
+    locationOn: Boolean,
+    onEnableWifi: () -> Unit,
+    onEnableLocation: () -> Unit,
+) {
     Column(modifier = Modifier.fillMaxSize().background(RouxenColors.Background)) {
-        ScanButton(
-            label = "Scan WiFi",
-            isScanning = state is WifiScanState.Scanning,
-            onClick = onScan,
-        )
-        when (state) {
-            is WifiScanState.Idle -> EmptyHint("Tap Scan to discover nearby networks")
-            is WifiScanState.Scanning -> LoadingContent()
-            is WifiScanState.Error -> ErrorContent(state.message)
-            is WifiScanState.Success -> WifiList(state.networks, onNetworkClick)
+        when {
+            !wifiOn -> RadioDisabledHint(
+                title = "WiFi is disabled",
+                buttonLabel = "Enable WiFi",
+                onEnable = onEnableWifi,
+            )
+            !locationOn -> RadioDisabledHint(
+                title = "Location is disabled",
+                description = "Location access is required to scan for nearby WiFi networks.",
+                buttonLabel = "Enable Location",
+                onEnable = onEnableLocation,
+            )
+            else -> when (state) {
+                is WifiScanState.Idle -> EmptyHint("Tap Scan to discover nearby networks")
+                is WifiScanState.Scanning -> LoadingContent()
+                is WifiScanState.Error -> ErrorContent(state.message)
+                is WifiScanState.Success -> WifiList(state.networks, onNetworkClick)
+            }
         }
     }
 }
@@ -224,23 +402,31 @@ private fun WifiTab(state: WifiScanState, onScan: () -> Unit, onNetworkClick: (S
 @Composable
 private fun BleTab(
     state: BleScanState,
-    onStart: () -> Unit,
-    onStop: () -> Unit,
     onDeviceClick: (String) -> Unit,
+    btOn: Boolean,
+    locationOn: Boolean,
+    onEnableBluetooth: () -> Unit,
+    onEnableLocation: () -> Unit,
 ) {
-    val isScanning = state is BleScanState.Scanning
     Column(modifier = Modifier.fillMaxSize().background(RouxenColors.Background)) {
-        ScanButton(
-            label = if (isScanning) "Stop" else "Scan BLE",
-            isScanning = false,
-            onClick = if (isScanning) onStop else onStart,
-            active = isScanning,
-        )
-        when (state) {
-            is BleScanState.Idle -> EmptyHint("Tap Scan to discover BLE devices")
-            is BleScanState.Scanning -> BleList(state.devices, isScanning = true, onDeviceClick)
-            is BleScanState.Success -> BleList(state.devices, isScanning = false, onDeviceClick)
-            is BleScanState.Error -> ErrorContent(state.message)
+        when {
+            !btOn -> RadioDisabledHint(
+                title = "Bluetooth is disabled",
+                buttonLabel = "Enable Bluetooth",
+                onEnable = onEnableBluetooth,
+            )
+            !locationOn -> RadioDisabledHint(
+                title = "Location is disabled",
+                description = "Location access is required to scan for nearby Bluetooth devices.",
+                buttonLabel = "Enable Location",
+                onEnable = onEnableLocation,
+            )
+            else -> when (state) {
+                is BleScanState.Idle -> EmptyHint("Tap Scan to discover BLE devices")
+                is BleScanState.Scanning -> BleList(state.devices, isScanning = true, onDeviceClick)
+                is BleScanState.Success -> BleList(state.devices, isScanning = false, onDeviceClick)
+                is BleScanState.Error -> ErrorContent(state.message)
+            }
         }
     }
 }
@@ -302,11 +488,21 @@ private fun WifiNetworkCard(network: WifiNetwork, onClick: () -> Unit) {
             verticalAlignment = Alignment.Top,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = network.ssid,
-                    style = RouxenTypography.bodySmall,
-                    color = RouxenColors.TextPrimary,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = network.ssid,
+                        style = RouxenTypography.bodySmall,
+                        color = RouxenColors.TextPrimary,
+                    )
+                    if (WifiScanCache.connectionInfo?.bssid.equals(network.bssid, ignoreCase = true)) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "● Connected",
+                            style = RouxenTypography.labelSmall,
+                            color = RouxenColors.Accent,
+                        )
+                    }
+                }
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = network.bssid,
@@ -394,39 +590,32 @@ private fun SignalBars(level: Int) {
 }
 
 @Composable
-private fun ScanButton(
+private fun HeaderScanButton(
     label: String,
-    isScanning: Boolean,
+    enabled: Boolean,
+    showSpinner: Boolean,
+    active: Boolean,
     onClick: () -> Unit,
-    active: Boolean = false,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.End,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (isScanning) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        if (showSpinner) {
             CircularProgressIndicator(
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(14.dp),
                 color = RouxenColors.Accent,
                 strokeWidth = 2.dp,
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
         }
-        Button(
-            onClick = onClick,
-            enabled = !isScanning,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (active) RouxenColors.Error else RouxenColors.Accent,
-                contentColor = RouxenColors.Background,
-                disabledContainerColor = RouxenColors.Border,
-                disabledContentColor = RouxenColors.TextSecondary,
-            ),
-            shape = RoundedCornerShape(4.dp),
-        ) {
-            Text(label, style = RouxenTypography.labelMedium)
+        TextButton(onClick = onClick, enabled = enabled) {
+            Text(
+                text = label,
+                style = RouxenTypography.labelMedium,
+                color = when {
+                    !enabled -> RouxenColors.TextSecondary
+                    active -> RouxenColors.Error
+                    else -> RouxenColors.Accent
+                },
+            )
         }
     }
 }
