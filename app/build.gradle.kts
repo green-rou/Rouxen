@@ -48,6 +48,8 @@ dependencies {
     implementation(project(":feature:ping"))
     implementation(project(":feature:whois"))
     implementation(project(":feature:history"))
+    implementation(project(":feature:wifi"))
+    implementation(project(":feature:settings"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

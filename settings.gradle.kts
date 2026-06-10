@@ -34,4 +34,5 @@ include(":feature:ssl")
 include(":feature:ping")
 include(":feature:whois")
 include(":feature:history")
- 
+include(":feature:wifi")
+include(":feature:settings")

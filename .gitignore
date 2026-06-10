@@ -1,0 +1,48 @@
+# ========================
+# Android / Gradle
+# ========================
+*.iml
+.gradle/
+build/
+/captures/
+.externalNativeBuild/
+.cxx/
+
+# ========================
+# IDE — IntelliJ / Android Studio
+# ========================
+/.idea/
+*.iws
+*.ipr
+
+# ========================
+# Local config & secrets
+# ========================
+local.properties
+*.keystore
+*.jks
+*.p12
+.env
+.env.*
+google-services.json
+GoogleService-Info.plist
+
+# ========================
+# Claude Code
+# ========================
+.claude/
+CLAUDE.md
+tasks/
+
+# ========================
+# OS artifacts
+# ========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ========================
+# Kotlin / Java
+# ========================
+*.class
+out/

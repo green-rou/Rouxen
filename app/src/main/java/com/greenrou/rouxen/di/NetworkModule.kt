@@ -9,8 +9,11 @@ import com.greenrou.rouxen.core.network.ipinfo.IpInfoClient
 import com.greenrou.rouxen.core.network.system.SystemNetworkClient
 import com.greenrou.rouxen.core.network.traceroute.TracerouteClient
 import com.greenrou.rouxen.core.network.whois.WhoisClient
+import com.greenrou.rouxen.feature.wifi.scanner.BleScanner
+import com.greenrou.rouxen.feature.wifi.scanner.WifiScanner
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -45,4 +48,6 @@ val networkModule = module {
     single { IpInfoClient(get()) }
     single { WhoisClient() }
     single { TracerouteClient() }
+    single { WifiScanner(androidContext()) }
+    single { BleScanner(androidContext()) }
 }
