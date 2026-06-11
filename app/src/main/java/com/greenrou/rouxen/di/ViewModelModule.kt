@@ -1,5 +1,6 @@
 package com.greenrou.rouxen.di
 
+import com.greenrou.rouxen.feature.apps.AppsViewModel
 import com.greenrou.rouxen.feature.device.DeviceMonitorViewModel
 import com.greenrou.rouxen.feature.dns.DnsViewModel
 import com.greenrou.rouxen.feature.history.HistoryViewModel
@@ -32,6 +33,7 @@ val viewModelModule = module {
     viewModel { HistoryViewModel(get(), get()) }
     viewModel { WifiScannerViewModel(get(), get()) }
     viewModel { BleGattViewModel(androidContext()) }
+    viewModel { AppsViewModel(androidContext()) }
     viewModel { DeviceMonitorViewModel(get()) }
     viewModel { TrafficMonitorViewModel(get(), get(), get()) }
     viewModel { RemoteAddressViewModel(get()) }

@@ -21,3 +21,6 @@ data class TrafficConnection(
         const val UID_UNKNOWN = -1
     }
 }
+
+val TrafficConnection.connectionKey: String
+    get() = "$protocol|$localPort|${remoteAddress.hostAddress}|$remotePort"

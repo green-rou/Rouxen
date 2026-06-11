@@ -1,5 +1,6 @@
 package com.greenrou.rouxen.feature.traffic.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,7 +20,7 @@ import com.greenrou.rouxen.core.ui.theme.RouxenTypography
 import com.greenrou.rouxen.feature.traffic.model.AppTrafficSummary
 
 @Composable
-fun ProcessesTab(summaries: List<AppTrafficSummary>) {
+fun ProcessesTab(summaries: List<AppTrafficSummary>, onClick: (Int) -> Unit) {
     if (summaries.isEmpty()) {
         EmptyHint("No active network usage")
         return
@@ -30,13 +31,15 @@ fun ProcessesTab(summaries: List<AppTrafficSummary>) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(summaries, key = { it.uid }) { AppTrafficRow(it) }
+        items(summaries, key = { it.uid }) { summary ->
+            AppTrafficRow(summary, onClick = { onClick(summary.uid) })
+        }
     }
 }
 
 @Composable
-private fun AppTrafficRow(summary: AppTrafficSummary) {
-    RouxenCard {
+private fun AppTrafficRow(summary: AppTrafficSummary, onClick: () -> Unit) {
+    RouxenCard(modifier = Modifier.clickable(onClick = onClick)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,

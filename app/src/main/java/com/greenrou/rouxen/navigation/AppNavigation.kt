@@ -27,6 +27,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import com.greenrou.rouxen.core.ui.theme.RouxenColors
+import com.greenrou.rouxen.feature.apps.AppsScreen
 import com.greenrou.rouxen.feature.device.DeviceMonitorScreen
 import com.greenrou.rouxen.feature.dns.DnsScreen
 import com.greenrou.rouxen.feature.home.HomeScreen
@@ -39,6 +40,8 @@ import com.greenrou.rouxen.feature.settings.SettingsScreen
 import com.greenrou.rouxen.feature.ssl.HeadersScreen
 import com.greenrou.rouxen.feature.ssl.SslScreen
 import com.greenrou.rouxen.feature.traceroute.TracerouteScreen
+import com.greenrou.rouxen.feature.traffic.AppDetailScreen
+import com.greenrou.rouxen.feature.traffic.ConnectionDetailScreen
 import com.greenrou.rouxen.feature.traffic.TrafficMonitorScreen
 import com.greenrou.rouxen.feature.whois.WhoisScreen
 import com.greenrou.rouxen.feature.wifi.BleDeviceDetailScreen
@@ -48,6 +51,7 @@ import com.greenrou.rouxen.navigation.scan.AllScreen
 
 private val topLevelRoutes = setOf(
     AppRoute.Home.route,
+    AppRoute.Apps.route,
     AppRoute.Settings.route,
 )
 
@@ -82,12 +86,52 @@ fun AppNavigation() {
                 )
             }
 
+            composable(AppRoute.Apps.route) {
+                AppsScreen()
+            }
+
             composable(AppRoute.DeviceMonitor.route) {
                 DeviceMonitorScreen(onBack = { navController.popBackStack() })
             }
 
             composable(AppRoute.TrafficMonitor.route) {
-                TrafficMonitorScreen(onBack = { navController.popBackStack() })
+                TrafficMonitorScreen(
+                    onBack = { navController.popBackStack() },
+                    onAppClick = { uid ->
+                        navController.navigate(AppRoute.TrafficAppDetail.createRoute(uid))
+                    },
+                    onConnectionClick = { key ->
+                        navController.navigate(AppRoute.TrafficConnectionDetail.createRoute(key))
+                    },
+                )
+            }
+
+            composable(
+                route = AppRoute.TrafficAppDetail.route,
+                arguments = listOf(
+                    navArgument(AppRoute.TrafficAppDetail.ARG_UID) { type = NavType.IntType }
+                ),
+            ) { backStackEntry ->
+                val uid = backStackEntry.arguments?.getInt(AppRoute.TrafficAppDetail.ARG_UID) ?: 0
+                AppDetailScreen(
+                    uid = uid,
+                    onBack = { navController.popBackStack() },
+                    onConnectionClick = { key ->
+                        navController.navigate(AppRoute.TrafficConnectionDetail.createRoute(key))
+                    },
+                )
+            }
+
+            composable(
+                route = AppRoute.TrafficConnectionDetail.route,
+                arguments = listOf(
+                    navArgument(AppRoute.TrafficConnectionDetail.ARG_KEY) { type = NavType.StringType }
+                ),
+            ) { backStackEntry ->
+                val key = Uri.decode(
+                    backStackEntry.arguments?.getString(AppRoute.TrafficConnectionDetail.ARG_KEY) ?: ""
+                )
+                ConnectionDetailScreen(connectionKey = key, onBack = { navController.popBackStack() })
             }
 
             composable(AppRoute.Settings.route) {

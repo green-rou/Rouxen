@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.greenrou.rouxen.feature.home"
+    namespace = "com.greenrou.rouxen.feature.apps"
     compileSdk = 37
 
     defaultConfig {
@@ -23,7 +23,6 @@ android {
 
 dependencies {
     implementation(project(":core:ui"))
-    implementation(project(":feature:history"))
     implementation(libs.androidx.core.ktx)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)

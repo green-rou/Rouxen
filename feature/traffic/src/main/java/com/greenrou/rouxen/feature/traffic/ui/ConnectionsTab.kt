@@ -1,5 +1,6 @@
 package com.greenrou.rouxen.feature.traffic.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,11 +22,15 @@ import com.greenrou.rouxen.core.ui.components.RouxenCard
 import com.greenrou.rouxen.core.ui.components.StatusBadge
 import com.greenrou.rouxen.core.ui.theme.RouxenColors
 import com.greenrou.rouxen.core.ui.theme.RouxenTypography
-import com.greenrou.rouxen.feature.traffic.model.ConnectionState
 import com.greenrou.rouxen.feature.traffic.model.TrafficConnection
+import com.greenrou.rouxen.feature.traffic.model.connectionKey
 
 @Composable
-fun ConnectionsTab(connections: List<TrafficConnection>, appLabels: Map<Int, String>) {
+fun ConnectionsTab(
+    connections: List<TrafficConnection>,
+    appLabels: Map<Int, String>,
+    onClick: (String) -> Unit,
+) {
     if (connections.isEmpty()) {
         EmptyHint("No active connections")
         return
@@ -37,18 +42,19 @@ fun ConnectionsTab(connections: List<TrafficConnection>, appLabels: Map<Int, Str
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(
-            items = sorted,
-            key = { "${it.protocol}:${it.localPort}:${it.remoteAddress.hostAddress}:${it.remotePort}" },
-        ) { connection ->
-            ConnectionRow(connection, appLabels[connection.uid] ?: "UID ${connection.uid}")
+        items(items = sorted, key = { it.connectionKey }) { connection ->
+            ConnectionRow(
+                connection = connection,
+                appLabel = appLabels[connection.uid] ?: "UID ${connection.uid}",
+                onClick = { onClick(connection.connectionKey) },
+            )
         }
     }
 }
 
 @Composable
-private fun ConnectionRow(connection: TrafficConnection, appLabel: String) {
-    RouxenCard {
+private fun ConnectionRow(connection: TrafficConnection, appLabel: String, onClick: () -> Unit) {
+    RouxenCard(modifier = Modifier.clickable(onClick = onClick)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -79,10 +85,4 @@ private fun ConnectionRow(connection: TrafficConnection, appLabel: String) {
             color = RouxenColors.TextSecondary,
         )
     }
-}
-
-private fun stateBadgeStatus(state: ConnectionState): BadgeStatus = when (state) {
-    ConnectionState.ESTABLISHED, ConnectionState.ACTIVE -> BadgeStatus.Success
-    ConnectionState.CLOSING -> BadgeStatus.Warning
-    ConnectionState.IDLE, ConnectionState.CLOSED -> BadgeStatus.Neutral
 }

@@ -9,17 +9,19 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,7 +37,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.greenrou.rouxen.core.ui.components.BadgeStatus
-import com.greenrou.rouxen.core.ui.components.RouxenCard
 import com.greenrou.rouxen.core.ui.components.StatusBadge
 import com.greenrou.rouxen.core.ui.theme.RouxenColors
 import com.greenrou.rouxen.core.ui.theme.RouxenTypography
@@ -51,6 +52,8 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun TrafficMonitorScreen(
     onBack: () -> Unit,
+    onAppClick: (Int) -> Unit,
+    onConnectionClick: (String) -> Unit,
     viewModel: TrafficMonitorViewModel = koinViewModel(),
     remoteAddressViewModel: RemoteAddressViewModel = koinViewModel(),
 ) {
@@ -87,18 +90,19 @@ fun TrafficMonitorScreen(
             .fillMaxSize()
             .background(RouxenColors.Background),
     ) {
-        TrafficMonitorHeader(onBack = onBack)
-        StatusBar(
+        TrafficMonitorHeader(
+            onBack = onBack,
             status = vpnStatus,
             onStart = onStart,
             onStop = onStop,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
         )
 
-        TabRow(
+        ScrollableTabRow(
             selectedTabIndex = selectedTab,
+            modifier = Modifier.fillMaxWidth(),
             containerColor = RouxenColors.Surface,
             contentColor = RouxenColors.Accent,
+            edgePadding = 0.dp,
             indicator = {},
             divider = {},
         ) {
@@ -120,10 +124,10 @@ fun TrafficMonitorScreen(
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             when (selectedTab) {
                 0 -> GatedContent(status = vpnStatus, onStart = onStart) {
-                    ProcessesTab(appSummaries)
+                    ProcessesTab(appSummaries, onClick = onAppClick)
                 }
                 1 -> GatedContent(status = vpnStatus, onStart = onStart) {
-                    ConnectionsTab(connections, appLabels)
+                    ConnectionsTab(connections, appLabels, onClick = onConnectionClick)
                 }
                 2 -> GatedContent(status = vpnStatus, onStart = onStart) {
                     RemoteAddressesTab(
@@ -157,32 +161,11 @@ private fun stopTrafficVpnService(context: Context) {
 }
 
 @Composable
-private fun TrafficMonitorHeader(onBack: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(RouxenColors.Surface)
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        TextButton(onClick = onBack) {
-            Text("← Home", style = RouxenTypography.labelMedium, color = RouxenColors.Accent)
-        }
-        Text(
-            text = "Traffic Monitor",
-            style = RouxenTypography.bodySmall,
-            color = RouxenColors.TextPrimary,
-            modifier = Modifier.padding(start = 4.dp),
-        )
-    }
-}
-
-@Composable
-private fun StatusBar(
+private fun TrafficMonitorHeader(
+    onBack: () -> Unit,
     status: VpnStatus,
     onStart: () -> Unit,
     onStop: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     val (label, badgeStatus) = when (status) {
         VpnStatus.Stopped -> "STOPPED" to BadgeStatus.Neutral
@@ -192,13 +175,29 @@ private fun StatusBar(
     }
     val isActive = status is VpnStatus.Running || status is VpnStatus.Starting
 
-    RouxenCard(modifier = modifier) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(RouxenColors.Surface)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = onBack) {
+                Text("← Home", style = RouxenTypography.labelMedium, color = RouxenColors.Accent)
+            }
+            Text(
+                text = "Traffic Monitor",
+                style = RouxenTypography.bodySmall,
+                color = RouxenColors.TextPrimary,
+                modifier = Modifier.padding(start = 4.dp),
+            )
+        }
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
             StatusBadge(label = label, status = badgeStatus)
+            Spacer(modifier = Modifier.width(8.dp))
             Button(
                 onClick = if (isActive) onStop else onStart,
                 colors = ButtonDefaults.buttonColors(
@@ -206,8 +205,9 @@ private fun StatusBar(
                     contentColor = RouxenColors.Background,
                 ),
                 shape = RoundedCornerShape(4.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
             ) {
-                Text(if (isActive) "Stop" else "Start", style = RouxenTypography.labelMedium)
+                Text(if (isActive) "Stop" else "Start", style = RouxenTypography.labelSmall)
             }
         }
     }

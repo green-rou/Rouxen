@@ -33,6 +33,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.greenrou.rouxen.core.ui.components.RouxenCard
 import com.greenrou.rouxen.core.ui.theme.RouxenColors
@@ -108,6 +110,10 @@ fun HomeScreen(
                 )
             }
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        LiveActivityCard(modifier = Modifier.weight(1f))
     }
 }
 
@@ -165,18 +171,54 @@ private fun SystemStatusBar(status: SystemStatusSnapshot) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            StatusItem(R.drawable.ic_status_battery, "${status.batteryPercent}%")
-            StatusItem(R.drawable.ic_status_memory, "${status.memoryUsedPercent}%")
-            StatusItem(R.drawable.ic_status_temp, "${status.temperatureCelsius.toInt()}°C")
-            StatusItem(R.drawable.ic_tool_wifi, if (status.wifiConnected) "WiFi" else "No WiFi")
-            StatusItem(R.drawable.ic_status_bluetooth, if (status.bluetoothEnabled) "BT On" else "BT Off")
+            StatusItem(R.drawable.ic_status_battery, "${status.batteryPercent}%", Modifier.weight(1f))
+            StatusItem(R.drawable.ic_status_memory, "${status.memoryUsedPercent}%", Modifier.weight(1f))
+            StatusItem(R.drawable.ic_status_temp, "${status.temperatureCelsius.toInt()}°C", Modifier.weight(1f))
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            val wifiLabel = when {
+                status.wifiSsid != null -> status.wifiSsid
+                !status.wifiEnabled -> "Off"
+                else -> "No WiFi"
+            }
+            ConnectivityStatusItem(
+                iconRes = R.drawable.ic_tool_wifi,
+                label = wifiLabel,
+                active = status.wifiConnected,
+                modifier = Modifier.weight(1f),
+            )
+
+            val bluetoothLabel = when {
+                status.bluetoothDeviceName != null -> status.bluetoothDeviceName
+                status.bluetoothEnabled -> "On"
+                else -> "Off"
+            }
+            ConnectivityStatusItem(
+                iconRes = R.drawable.ic_status_bluetooth,
+                label = bluetoothLabel,
+                active = status.bluetoothDeviceName != null,
+                modifier = Modifier.weight(1f),
+            )
+
+            ConnectivityStatusItem(
+                iconRes = R.drawable.ic_status_location,
+                label = if (status.locationEnabled) "On" else "Off",
+                active = status.locationEnabled,
+                modifier = Modifier.weight(1f),
+            )
         }
     }
 }
 
 @Composable
-private fun StatusItem(@DrawableRes iconRes: Int, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+private fun StatusItem(@DrawableRes iconRes: Int, label: String, modifier: Modifier = Modifier) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(
             painter = painterResource(id = iconRes),
             contentDescription = null,
@@ -184,10 +226,33 @@ private fun StatusItem(@DrawableRes iconRes: Int, label: String) {
             modifier = Modifier.size(20.dp),
         )
         Spacer(modifier = Modifier.height(4.dp))
+        Text(text = label, style = RouxenTypography.labelSmall, color = RouxenColors.TextSecondary)
+    }
+}
+
+@Composable
+private fun ConnectivityStatusItem(
+    @DrawableRes iconRes: Int,
+    label: String,
+    active: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val tint = if (active) RouxenColors.Accent else RouxenColors.TextSecondary
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(
+            painter = painterResource(id = iconRes),
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier.size(20.dp),
+        )
+        Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = label,
             style = RouxenTypography.labelSmall,
-            color = RouxenColors.TextSecondary,
+            color = tint,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
         )
     }
 }
