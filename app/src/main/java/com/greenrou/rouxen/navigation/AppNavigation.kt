@@ -3,16 +3,13 @@ package com.greenrou.rouxen.navigation
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavType
@@ -30,10 +27,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import com.greenrou.rouxen.core.ui.theme.RouxenColors
-import com.greenrou.rouxen.core.ui.theme.RouxenTypography
 import com.greenrou.rouxen.feature.device.DeviceMonitorScreen
 import com.greenrou.rouxen.feature.dns.DnsScreen
-import com.greenrou.rouxen.feature.history.HistoryScreen
 import com.greenrou.rouxen.feature.home.HomeScreen
 import com.greenrou.rouxen.feature.home.SiteAnalyzerEntryScreen
 import com.greenrou.rouxen.feature.map.MapScreen
@@ -44,6 +39,7 @@ import com.greenrou.rouxen.feature.settings.SettingsScreen
 import com.greenrou.rouxen.feature.ssl.HeadersScreen
 import com.greenrou.rouxen.feature.ssl.SslScreen
 import com.greenrou.rouxen.feature.traceroute.TracerouteScreen
+import com.greenrou.rouxen.feature.traffic.TrafficMonitorScreen
 import com.greenrou.rouxen.feature.whois.WhoisScreen
 import com.greenrou.rouxen.feature.wifi.BleDeviceDetailScreen
 import com.greenrou.rouxen.feature.wifi.WifiNetworkDetailScreen
@@ -52,7 +48,6 @@ import com.greenrou.rouxen.navigation.scan.AllScreen
 
 private val topLevelRoutes = setOf(
     AppRoute.Home.route,
-    AppRoute.History.route,
     AppRoute.Settings.route,
 )
 
@@ -83,11 +78,16 @@ fun AppNavigation() {
                     onSiteAnalyzer = { navController.navigate(AppRoute.SiteAnalyzerEntry.route) },
                     onWifiScanner = { navController.navigate(AppRoute.WifiScanner.route) },
                     onDeviceMonitor = { navController.navigate(AppRoute.DeviceMonitor.route) },
+                    onTrafficMonitor = { navController.navigate(AppRoute.TrafficMonitor.route) },
                 )
             }
 
             composable(AppRoute.DeviceMonitor.route) {
                 DeviceMonitorScreen(onBack = { navController.popBackStack() })
+            }
+
+            composable(AppRoute.TrafficMonitor.route) {
+                TrafficMonitorScreen(onBack = { navController.popBackStack() })
             }
 
             composable(AppRoute.Settings.route) {
@@ -139,17 +139,6 @@ fun AppNavigation() {
                 BleDeviceDetailScreen(address = address, onBack = { navController.popBackStack() })
             }
 
-            composable(AppRoute.History.route) {
-                HistoryScreen(
-                    onOpenScan = { id ->
-                        navController.navigate(AppRoute.ScanDetail.createRoute(id))
-                    },
-                    onReanalyze = { url ->
-                        navController.navigate(AppRoute.Scan.createRoute(url))
-                    },
-                )
-            }
-
             composable(
                 route = AppRoute.Scan.route,
                 arguments = listOf(
@@ -194,16 +183,6 @@ fun AppNavigation() {
                     tabScreens = scanTabs(url),
                 )
             }
-
-            composable(
-                route = AppRoute.ScanDetail.route,
-                arguments = listOf(
-                    navArgument(AppRoute.ScanDetail.ARG_ID) { type = NavType.LongType }
-                ),
-            ) { backStackEntry ->
-                val id = backStackEntry.arguments?.getLong(AppRoute.ScanDetail.ARG_ID) ?: 0L
-                ScanDetailPlaceholder(id)
-            }
         }
     }
 }
@@ -219,19 +198,3 @@ private fun scanTabs(url: String): Map<ScanTab, @Composable () -> Unit> = mapOf(
     ScanTab.TRACEROUTE to { TracerouteScreen(url = url) },
     ScanTab.MAP to { MapScreen(url = url) },
 )
-
-@Composable
-private fun ScanDetailPlaceholder(id: Long) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(RouxenColors.Background),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = "Scan #$id",
-            style = RouxenTypography.bodyMedium,
-            color = RouxenColors.TextSecondary,
-        )
-    }
-}

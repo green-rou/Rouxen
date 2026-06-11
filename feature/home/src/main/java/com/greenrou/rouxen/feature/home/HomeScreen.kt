@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,14 +23,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.greenrou.rouxen.core.ui.components.RouxenCard
 import com.greenrou.rouxen.core.ui.theme.RouxenColors
 import com.greenrou.rouxen.feature.home.R
 import com.greenrou.rouxen.core.ui.theme.RouxenTypography
+import kotlinx.coroutines.delay
 
 private data class Tool(
     @DrawableRes val iconRes: Int,
@@ -42,6 +51,7 @@ private val tools = listOf(
     Tool(R.drawable.ic_tool_analyzer, "Site Analyzer", "DNS · SSL · Headers"),
     Tool(R.drawable.ic_tool_wifi, "WiFi & BLE", "Networks & devices"),
     Tool(R.drawable.ic_tool_monitor, "Device Monitor", "CPU · RAM · Battery"),
+    Tool(R.drawable.ic_tool_traffic, "Traffic Monitor", "Live usage · Connections"),
 )
 
 @Composable
@@ -49,6 +59,7 @@ fun HomeScreen(
     onSiteAnalyzer: () -> Unit,
     onWifiScanner: () -> Unit,
     onDeviceMonitor: () -> Unit,
+    onTrafficMonitor: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -64,7 +75,19 @@ fun HomeScreen(
             color = RouxenColors.Accent,
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+
+        val context = LocalContext.current
+        var status by remember { mutableStateOf(readSystemStatus(context)) }
+        LaunchedEffect(Unit) {
+            while (true) {
+                status = readSystemStatus(context)
+                delay(3000)
+            }
+        }
+        SystemStatusBar(status)
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
@@ -79,6 +102,7 @@ fun HomeScreen(
                         "Site Analyzer" -> onSiteAnalyzer
                         "WiFi & BLE" -> onWifiScanner
                         "Device Monitor" -> onDeviceMonitor
+                        "Traffic Monitor" -> onTrafficMonitor
                         else -> null
                     },
                 )
@@ -131,5 +155,39 @@ private fun ToolTile(tool: Tool, onClick: (() -> Unit)?) {
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun SystemStatusBar(status: SystemStatusSnapshot) {
+    RouxenCard {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            StatusItem(R.drawable.ic_status_battery, "${status.batteryPercent}%")
+            StatusItem(R.drawable.ic_status_memory, "${status.memoryUsedPercent}%")
+            StatusItem(R.drawable.ic_status_temp, "${status.temperatureCelsius.toInt()}°C")
+            StatusItem(R.drawable.ic_tool_wifi, if (status.wifiConnected) "WiFi" else "No WiFi")
+            StatusItem(R.drawable.ic_status_bluetooth, if (status.bluetoothEnabled) "BT On" else "BT Off")
+        }
+    }
+}
+
+@Composable
+private fun StatusItem(@DrawableRes iconRes: Int, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(
+            painter = painterResource(id = iconRes),
+            contentDescription = null,
+            tint = RouxenColors.Accent,
+            modifier = Modifier.size(20.dp),
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = label,
+            style = RouxenTypography.labelSmall,
+            color = RouxenColors.TextSecondary,
+        )
     }
 }

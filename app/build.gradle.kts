@@ -50,6 +50,7 @@ dependencies {
     implementation(project(":feature:history"))
     implementation(project(":feature:wifi"))
     implementation(project(":feature:device"))
+    implementation(project(":feature:traffic"))
     implementation(project(":feature:settings"))
 
     implementation(platform(libs.androidx.compose.bom))

@@ -40,6 +40,9 @@ import com.greenrou.rouxen.core.ui.theme.RouxenColors
 import com.greenrou.rouxen.core.ui.theme.RouxenTypography
 import com.greenrou.rouxen.feature.dns.DnsState
 import com.greenrou.rouxen.feature.dns.DnsViewModel
+import com.greenrou.rouxen.feature.map.MapState
+import com.greenrou.rouxen.feature.map.MapViewModel
+import com.greenrou.rouxen.feature.map.StaticMapImage
 import com.greenrou.rouxen.feature.ping.PingState
 import com.greenrou.rouxen.feature.ping.PingViewModel
 import com.greenrou.rouxen.feature.ssl.HeadersState
@@ -64,6 +67,7 @@ fun AllScreen(
     pingViewModel: PingViewModel = koinViewModel(),
     whoisViewModel: WhoisViewModel = koinViewModel(),
     tracerouteViewModel: TracerouteViewModel = koinViewModel(),
+    mapViewModel: MapViewModel = koinViewModel(),
 ) {
     LaunchedEffect(url) {
         dnsViewModel.analyze(url)
@@ -72,6 +76,7 @@ fun AllScreen(
         pingViewModel.analyze(url)
         whoisViewModel.analyze(url)
         tracerouteViewModel.trace(url)
+        mapViewModel.locate(url)
     }
 
     val dnsState by dnsViewModel.state.collectAsState()
@@ -80,6 +85,7 @@ fun AllScreen(
     val pingState by pingViewModel.state.collectAsState()
     val whoisState by whoisViewModel.state.collectAsState()
     val tracerouteState by tracerouteViewModel.state.collectAsState()
+    val mapState by mapViewModel.state.collectAsState()
 
     LazyColumn(
         modifier = Modifier
@@ -111,6 +117,10 @@ fun AllScreen(
         // ---- Traceroute ----
         item { SectionHeader("Traceroute") }
         item { TracerouteSection(tracerouteState) }
+
+        // ---- Map ----
+        item { SectionHeader("Map") }
+        item { MapSection(mapState, mapViewModel) }
     }
 }
 
@@ -604,4 +614,17 @@ private fun tracerouteLatencyColor(latencyMs: Long) = when {
     latencyMs < 50 -> RouxenColors.Accent
     latencyMs < 200 -> RouxenColors.Warning
     else -> RouxenColors.Error
+}
+
+// ============================================================
+// Map section
+// ============================================================
+
+@Composable
+private fun MapSection(state: MapState, viewModel: MapViewModel) {
+    when (state) {
+        is MapState.Idle, is MapState.Loading -> LoadingRow()
+        is MapState.Error -> ErrorRow(state.message)
+        is MapState.Success -> StaticMapImage(lat = state.info.lat, lon = state.info.lon, viewModel = viewModel)
+    }
 }

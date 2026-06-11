@@ -22,7 +22,6 @@ private data class BottomNavItem(
 
 private val bottomNavItems = listOf(
     BottomNavItem(AppRoute.Home.route, "Home", R.drawable.ic_nav_home),
-    BottomNavItem(AppRoute.History.route, "History", R.drawable.ic_nav_history),
     BottomNavItem(AppRoute.Settings.route, "Settings", R.drawable.ic_nav_settings),
 )
 
