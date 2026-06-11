@@ -13,8 +13,8 @@ android {
         applicationId = "com.greenrou.rouxen"
         minSdk = 28
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 10
+        versionName = "0.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -49,7 +49,10 @@ dependencies {
     implementation(project(":feature:whois"))
     implementation(project(":feature:history"))
     implementation(project(":feature:wifi"))
+    implementation(project(":feature:device"))
+    implementation(project(":feature:traffic"))
     implementation(project(":feature:settings"))
+    implementation(project(":feature:apps"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

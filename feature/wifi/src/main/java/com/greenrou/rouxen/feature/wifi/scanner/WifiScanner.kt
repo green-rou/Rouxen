@@ -6,6 +6,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.wifi.WifiManager
+import android.os.Build
+import android.text.format.Formatter
+import com.greenrou.rouxen.feature.wifi.model.WifiConnectionInfo
 import com.greenrou.rouxen.feature.wifi.model.WifiNetwork
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -47,4 +50,27 @@ class WifiScanner(private val context: Context) {
 
         awaitClose { context.unregisterReceiver(receiver) }
     }.flowOn(Dispatchers.IO)
+
+    @SuppressLint("MissingPermission")
+    fun currentConnection(): WifiConnectionInfo? {
+        val wifiManager = context.applicationContext
+            .getSystemService(Context.WIFI_SERVICE) as WifiManager
+
+        @Suppress("DEPRECATION")
+        val info = wifiManager.connectionInfo
+        if (info == null || info.networkId == -1) return null
+
+        @Suppress("DEPRECATION")
+        val ip = Formatter.formatIpAddress(info.ipAddress)
+        val rx = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            info.rxLinkSpeedMbps.takeIf { it > 0 }
+        } else null
+
+        return WifiConnectionInfo(
+            bssid = info.bssid ?: "",
+            linkSpeedMbps = info.linkSpeed,
+            rxLinkSpeedMbps = rx,
+            ipAddress = ip,
+        )
+    }
 }

@@ -34,7 +34,7 @@ val networkModule = module {
 
     single {
         Retrofit.Builder()
-            .baseUrl("https://ip-api.com/")
+            .baseUrl("http://ip-api.com/")
             .client(get())
             .addConverterFactory(GsonConverterFactory.create())
             .build()

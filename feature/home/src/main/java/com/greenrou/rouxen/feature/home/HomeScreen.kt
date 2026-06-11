@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,14 +23,24 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.greenrou.rouxen.core.ui.components.RouxenCard
 import com.greenrou.rouxen.core.ui.theme.RouxenColors
 import com.greenrou.rouxen.feature.home.R
 import com.greenrou.rouxen.core.ui.theme.RouxenTypography
+import kotlinx.coroutines.delay
 
 private data class Tool(
     @DrawableRes val iconRes: Int,
@@ -41,13 +52,16 @@ private data class Tool(
 private val tools = listOf(
     Tool(R.drawable.ic_tool_analyzer, "Site Analyzer", "DNS · SSL · Headers"),
     Tool(R.drawable.ic_tool_wifi, "WiFi & BLE", "Networks & devices"),
-    Tool(R.drawable.ic_tool_monitor, "Device Monitor", "CPU · RAM · Battery", available = false),
+    Tool(R.drawable.ic_tool_monitor, "Device Monitor", "CPU · RAM · Battery"),
+    Tool(R.drawable.ic_tool_traffic, "Traffic Monitor", "Live usage · Connections"),
 )
 
 @Composable
 fun HomeScreen(
     onSiteAnalyzer: () -> Unit,
     onWifiScanner: () -> Unit,
+    onDeviceMonitor: () -> Unit,
+    onTrafficMonitor: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -62,14 +76,20 @@ fun HomeScreen(
             style = RouxenTypography.titleMedium,
             color = RouxenColors.Accent,
         )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "Network analyzer",
-            style = RouxenTypography.bodySmall,
-            color = RouxenColors.TextSecondary,
-        )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+
+        val context = LocalContext.current
+        var status by remember { mutableStateOf(readSystemStatus(context)) }
+        LaunchedEffect(Unit) {
+            while (true) {
+                status = readSystemStatus(context)
+                delay(3000)
+            }
+        }
+        SystemStatusBar(status)
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
@@ -83,11 +103,17 @@ fun HomeScreen(
                     onClick = when (tool.title) {
                         "Site Analyzer" -> onSiteAnalyzer
                         "WiFi & BLE" -> onWifiScanner
+                        "Device Monitor" -> onDeviceMonitor
+                        "Traffic Monitor" -> onTrafficMonitor
                         else -> null
                     },
                 )
             }
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        LiveActivityCard(modifier = Modifier.weight(1f))
     }
 }
 
@@ -135,5 +161,98 @@ private fun ToolTile(tool: Tool, onClick: (() -> Unit)?) {
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun SystemStatusBar(status: SystemStatusSnapshot) {
+    RouxenCard {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            StatusItem(R.drawable.ic_status_battery, "${status.batteryPercent}%", Modifier.weight(1f))
+            StatusItem(R.drawable.ic_status_memory, "${status.memoryUsedPercent}%", Modifier.weight(1f))
+            StatusItem(R.drawable.ic_status_temp, "${status.temperatureCelsius.toInt()}°C", Modifier.weight(1f))
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            val wifiLabel = when {
+                status.wifiSsid != null -> status.wifiSsid
+                !status.wifiEnabled -> "Off"
+                else -> "No WiFi"
+            }
+            ConnectivityStatusItem(
+                iconRes = R.drawable.ic_tool_wifi,
+                label = wifiLabel,
+                active = status.wifiConnected,
+                modifier = Modifier.weight(1f),
+            )
+
+            val bluetoothLabel = when {
+                status.bluetoothDeviceName != null -> status.bluetoothDeviceName
+                status.bluetoothEnabled -> "On"
+                else -> "Off"
+            }
+            ConnectivityStatusItem(
+                iconRes = R.drawable.ic_status_bluetooth,
+                label = bluetoothLabel,
+                active = status.bluetoothDeviceName != null,
+                modifier = Modifier.weight(1f),
+            )
+
+            ConnectivityStatusItem(
+                iconRes = R.drawable.ic_status_location,
+                label = if (status.locationEnabled) "On" else "Off",
+                active = status.locationEnabled,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun StatusItem(@DrawableRes iconRes: Int, label: String, modifier: Modifier = Modifier) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(
+            painter = painterResource(id = iconRes),
+            contentDescription = null,
+            tint = RouxenColors.Accent,
+            modifier = Modifier.size(20.dp),
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(text = label, style = RouxenTypography.labelSmall, color = RouxenColors.TextSecondary)
+    }
+}
+
+@Composable
+private fun ConnectivityStatusItem(
+    @DrawableRes iconRes: Int,
+    label: String,
+    active: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val tint = if (active) RouxenColors.Accent else RouxenColors.TextSecondary
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(
+            painter = painterResource(id = iconRes),
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier.size(20.dp),
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = label,
+            style = RouxenTypography.labelSmall,
+            color = tint,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+        )
     }
 }

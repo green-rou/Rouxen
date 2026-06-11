@@ -39,7 +39,6 @@ private val dateFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefaul
 
 @Composable
 fun HistoryScreen(
-    onOpenScan: (Long) -> Unit,
     onReanalyze: (String) -> Unit = {},
     viewModel: HistoryViewModel = koinViewModel(),
 ) {
@@ -74,7 +73,6 @@ fun HistoryScreen(
                     SwipeableScanItem(
                         scan = scan,
                         onDelete = { viewModel.delete(scan.id) },
-                        onOpen = { onOpenScan(scan.id) },
                         onReanalyze = { onReanalyze(scan.url) },
                     )
                 }
@@ -87,7 +85,6 @@ fun HistoryScreen(
 private fun SwipeableScanItem(
     scan: ScanResultEntity,
     onDelete: () -> Unit,
-    onOpen: () -> Unit,
     onReanalyze: () -> Unit,
 ) {
     val dismissState = rememberSwipeToDismissBoxState()

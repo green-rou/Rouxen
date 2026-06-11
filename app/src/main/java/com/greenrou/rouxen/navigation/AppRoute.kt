@@ -4,10 +4,12 @@ import android.net.Uri
 
 sealed class AppRoute(val route: String) {
     object Home : AppRoute("home")
-    object History : AppRoute("history")
     object Settings : AppRoute("settings")
+    object Apps : AppRoute("apps")
     object SiteAnalyzerEntry : AppRoute("site_analyzer")
     object WifiScanner : AppRoute("wifi_scanner")
+    object DeviceMonitor : AppRoute("device_monitor")
+    object TrafficMonitor : AppRoute("traffic_monitor")
 
     object WifiNetworkDetail : AppRoute("wifi_detail/{bssid}") {
         const val ARG_BSSID = "bssid"
@@ -19,13 +21,18 @@ sealed class AppRoute(val route: String) {
         fun createRoute(address: String) = "ble_detail/${Uri.encode(address)}"
     }
 
+    object TrafficAppDetail : AppRoute("traffic_app/{uid}") {
+        const val ARG_UID = "uid"
+        fun createRoute(uid: Int) = "traffic_app/$uid"
+    }
+
+    object TrafficConnectionDetail : AppRoute("traffic_connection/{key}") {
+        const val ARG_KEY = "key"
+        fun createRoute(key: String) = "traffic_connection/${Uri.encode(key)}"
+    }
+
     object Scan : AppRoute("scan/{url}") {
         const val ARG_URL = "url"
         fun createRoute(url: String): String = "scan/${Uri.encode(url)}"
-    }
-
-    object ScanDetail : AppRoute("scan_detail/{id}") {
-        const val ARG_ID = "id"
-        fun createRoute(id: Long): String = "scan_detail/$id"
     }
 }

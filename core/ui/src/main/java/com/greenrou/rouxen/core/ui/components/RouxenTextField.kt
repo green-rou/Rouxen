@@ -23,6 +23,7 @@ fun RouxenTextField(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     placeholder: String = "",
+    leadingIcon: (@Composable () -> Unit)? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     singleLine: Boolean = true,
@@ -41,6 +42,7 @@ fun RouxenTextField(
                 color = RouxenColors.TextSecondary,
             )
         },
+        leadingIcon = leadingIcon,
         singleLine = singleLine,
         shape = TextFieldShape,
         keyboardOptions = keyboardOptions,

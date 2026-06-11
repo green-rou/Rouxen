@@ -23,6 +23,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.greenrou.rouxen.core.network.traceroute.TracerouteHop
 import com.greenrou.rouxen.core.ui.components.BadgeStatus
@@ -148,7 +149,12 @@ fun TracerouteUnsupportedScreen() {
             .background(RouxenColors.Background),
         contentAlignment = Alignment.Center,
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp),
+        ) {
             Text(
                 text = "Traceroute",
                 style = RouxenTypography.titleSmall,
@@ -156,9 +162,10 @@ fun TracerouteUnsupportedScreen() {
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Not supported on this device",
+                text = "Not supported on this device — requires raw socket access (root)",
                 style = RouxenTypography.bodySmall,
                 color = RouxenColors.TextSecondary,
+                textAlign = TextAlign.Center,
             )
         }
     }

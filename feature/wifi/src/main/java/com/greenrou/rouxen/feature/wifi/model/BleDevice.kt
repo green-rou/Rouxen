@@ -5,6 +5,9 @@ data class BleDevice(
     val address: String,
     val rssi: Int,
     val manufacturerId: Int?,
+    val txPowerLevel: Int?,
+    val isConnectable: Boolean,
+    val serviceUuids: List<String>,
 )
 
 val BleDevice.level: Int

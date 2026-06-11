@@ -41,7 +41,7 @@ fun ScanScreen(
     val backStack by tabNavController.currentBackStackEntryAsState()
     val currentTab = ScanTab.entries.find {
         backStack?.destination?.route == it.route
-    } ?: ScanTab.DNS
+    } ?: ScanTab.ALL
 
     Column(
         modifier = Modifier
@@ -85,7 +85,7 @@ fun ScanScreen(
 
         NavHost(
             navController = tabNavController,
-            startDestination = ScanTab.DNS.route,
+            startDestination = ScanTab.ALL.route,
             modifier = Modifier.fillMaxSize(),
         ) {
             ScanTab.entries.forEach { tab ->
