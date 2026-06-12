@@ -30,6 +30,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      HAS_KEYSTORE: ${{ secrets.KEYSTORE_BASE64 != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,12 +53,12 @@ jobs:
         run: echo "name=${{ github.event_name == 'push' && github.ref_name || inputs.tag }}" >> "$GITHUB_OUTPUT"
 
       - name: Decode signing keystore
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        if: ${{ env.HAS_KEYSTORE == 'true' }}
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "${{ runner.temp }}/release.jks"
 
       - name: Build release APK
         env:
-          KEYSTORE_FILE: ${{ secrets.KEYSTORE_BASE64 != '' && format('{0}/release.jks', runner.temp) || '' }}
+          KEYSTORE_FILE: ${{ env.HAS_KEYSTORE == 'true' && format('{0}/release.jks', runner.temp) || '' }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
