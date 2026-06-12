@@ -56,6 +56,26 @@ jobs:
         if: ${{ env.HAS_KEYSTORE == 'true' }}
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "${{ runner.temp }}/release.jks"
 
+      - name: Verify signing credentials
+        if: ${{ env.HAS_KEYSTORE == 'true' }}
+        run: |
+          KS="${{ runner.temp }}/release.jks"
+          if [ -z "${{ secrets.KEY_ALIAS }}" ]; then
+            echo "::warning::KEY_ALIAS secret is empty or not set"
+          fi
+          if [ -z "${{ secrets.KEY_PASSWORD }}" ]; then
+            echo "::warning::KEY_PASSWORD secret is empty or not set"
+          fi
+          echo "Alias(es) in keystore:"
+          keytool -list -keystore "$KS" -storepass "${{ secrets.KEYSTORE_PASSWORD }}" 2>&1 | grep -i "alias name" \
+            || echo "  could not list aliases - KEYSTORE_PASSWORD may be wrong"
+          if keytool -certreq -keystore "$KS" -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
+              -alias "${{ secrets.KEY_ALIAS }}" -keypass "${{ secrets.KEY_PASSWORD }}" -file /dev/null 2>/dev/null; then
+            echo "OK: KEY_ALIAS + KEY_PASSWORD can decrypt the private key"
+          else
+            echo "::error::KEY_ALIAS ('${{ secrets.KEY_ALIAS }}') + KEY_PASSWORD cannot decrypt the private key for this keystore"
+          fi
+
       - name: Build release APK
         env:
           KEYSTORE_FILE: ${{ env.HAS_KEYSTORE == 'true' && format('{0}/release.jks', runner.temp) || '' }}

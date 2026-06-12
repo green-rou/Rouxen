@@ -23,6 +23,7 @@ keystore.properties
 *.keystore
 *.jks
 *.p12
+base64.txt
 .env
 .env.*
 google-services.json
