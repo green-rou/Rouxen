@@ -1,0 +1,77 @@
+name: Release
+
+# Builds app/build.gradle.kts:assembleRelease and publishes the APK to
+# GitHub Releases.
+#
+# Triggers:
+#   - push of a tag matching v*.*.* (e.g. v0.0.2)
+#   - manual run via "Run workflow" (provide a release tag)
+#
+# Optional repo secrets for a signed APK (release is unsigned if unset):
+#   KEYSTORE_BASE64   - base64 of the .jks/.keystore file
+#                        (e.g. base64 -w0 release.jks)
+#   KEYSTORE_PASSWORD - keystore password
+#   KEY_ALIAS         - key alias
+#   KEY_PASSWORD      - key password
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v0.0.2)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Resolve release tag
+        id: tag
+        run: echo "name=${{ github.event_name == 'push' && github.ref_name || inputs.tag }}" >> "$GITHUB_OUTPUT"
+
+      - name: Decode signing keystore
+        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "${{ runner.temp }}/release.jks"
+
+      - name: Build release APK
+        env:
+          KEYSTORE_FILE: ${{ secrets.KEYSTORE_BASE64 != '' && format('{0}/release.jks', runner.temp) || '' }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Collect APK
+        run: |
+          mkdir -p release
+          cp app/build/outputs/apk/release/*.apk "release/rouxen-${{ steps.tag.outputs.name }}.apk"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.name }}
+          files: release/*.apk
+          generate_release_notes: true

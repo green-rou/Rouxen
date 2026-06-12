@@ -19,6 +19,7 @@ build/
 # Local config & secrets
 # ========================
 local.properties
+keystore.properties
 *.keystore
 *.jks
 *.p12
